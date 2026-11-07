@@ -5,7 +5,11 @@
   "type": "module",
   "module": "src/index.ts",
   "scripts": {
-    "build": "bun build ./src/index.ts --outdir ./dist --target bun",
+    "build": "bun run build:client && bun run build:static && bun run build:server",
+    "build:client": "bun build ./src/browser/app.ts --outdir ./dist/client --target browser --minify --sourcemap",
+    "build:server": "bun build ./src/index.ts --outdir ./dist --target bun",
+    "build:static": "bun run ./scripts/copy-static.ts",
+    "dev": "bun run build:client && bun --watch ./src/index.ts",
     "start": "bun run ./src/index.ts",
     "typecheck": "tsc --noEmit"
   },

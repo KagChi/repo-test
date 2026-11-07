@@ -1,7 +1,11 @@
-import { greet, padStart, sum } from "@repo/shared-utils";
+import { createWebApp } from "./server";
 
-const values = [1, 2, 3];
-const total = sum(...values);
+const port = Number(process.env.WEB_PORT ?? process.env.PORT ?? 3000);
+const app = createWebApp();
 
-console.log(greet("web"));
-console.log(`sum(${values.join(", ")}) = ${padStart(total, 2)}`);
+const server = Bun.serve({
+  port,
+  fetch: (request) => app.fetch(request),
+});
+
+console.log(`Notes web app listening on ${server.url} (api: ${app.apiBaseUrl})`);

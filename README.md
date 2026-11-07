@@ -30,13 +30,42 @@ bun run format       # apply Biome formatting only
 bun run lint         # run Biome lint rules only
 ```
 
+## Running the API and web app together
+
+The web app talks to the API only through its own same-origin `/api/*` proxy, so both
+processes run side by side during development:
+
+```bash
+# Terminal 1 — notes API on http://localhost:3001
+bun run --cwd apps/api dev
+
+# Terminal 2 — notes UI on http://localhost:3000
+bun run --cwd apps/web dev
+```
+
+Open <http://localhost:3000> and create a note. The list, create form, delete buttons,
+and cache badge (`X-Cache: HIT` / `MISS`) all go through the web server's `/api` proxy
+to `API_BASE_URL` (default `http://localhost:3001`).
+
+For a production-like run, build once and start the web server:
+
+```bash
+bun run build
+bun run --cwd apps/api start     # http://localhost:3001
+bun run --cwd apps/web start     # http://localhost:3000
+```
+
+`bun run --cwd apps/web dev` rebuilds the browser bundle before watching the server, so
+`/app.js` is always current. Without a built bundle the page still loads, but `/app.js`
+answers `503` with a hint to run `bun run build:client`.
+
 ## Layout
 
 ```text
 .
 ├── apps/                  # Deployable applications
 │   ├── api/               # SQLite-backed notes REST API (Bun.serve + TtlLruCache)
-│   └── web/               # Placeholder Bun app that consumes @repo/shared-utils
+│   └── web/               # Bun-served notes UI that proxies /api/* to the API
 ├── packages/              # Shared modules and internal configuration
 │   ├── config-biome/      # Shared Biome lint/format rules
 │   ├── config-typescript/ # Shared tsconfig bases
@@ -82,11 +111,51 @@ required and at most 5000 characters. Invalid payloads return `400`.
 Successful list and detail reads are cached per request handler and tagged with
 `X-Cache: HIT` or `X-Cache: MISS`; creates and deletes invalidate the affected
 entries. Permissive CORS headers (including `Access-Control-Expose-Headers: X-Cache`)
-and `OPTIONS` handling are included for the future web frontend.
+and `OPTIONS` handling are included for the web frontend and other browser clients.
 
 `createApp()` from `apps/api/src/app.ts` returns a `{ fetch }` handler without opening
 a listener, so tests can drive the API in-process; `apps/api/src/server.ts` is the
 only entry point that calls `Bun.serve`.
+
+### `@repo/web`
+
+A server-rendered notes UI that consumes the cached REST API through `Bun.serve`.
+
+```bash
+bun run --cwd apps/web dev     # rebuild + watch on http://localhost:3000
+bun run --cwd apps/web start   # serve the app on http://localhost:3000
+bun run --cwd apps/web build   # build the browser bundle and server
+```
+
+| Variable       | Default                 | Purpose                                      |
+| -------------- | ----------------------- | -------------------------------------------- |
+| `PORT`         | `3000`                  | HTTP port (`WEB_PORT` also works).           |
+| `API_BASE_URL` | `http://localhost:3001` | Upstream notes API used by the `/api` proxy. |
+
+| Method             | Path          | Response                                        |
+| ------------------ | ------------- | ----------------------------------------------- |
+| `GET`              | `/`           | Notes page (`index.html`).                      |
+| `GET`              | `/styles.css` | Stylesheet.                                     |
+| `GET`              | `/app.js`     | Compiled browser bundle (`dist/client/app.js`). |
+| `GET`/`POST`/`...` | `/api/*`      | Proxied to `API_BASE_URL`, preserving the path. |
+
+The UI supports listing notes, creating a note with a title and content, deleting a
+note, and shows loading, empty, success, validation-error, and API-error states. When
+the API answers with `X-Cache: HIT` or `MISS`, the header badge shows it.
+
+The proxy preserves the method, request body, response status, content type, and the
+`X-Cache` header (hop-by-hop headers are dropped). It never starts a second server, so
+tests call `createWebApp().fetch` in-process.
+
+Browser code lives in `apps/web/src/browser/` and imports the API client plus type-only
+`Note` re-export; the compiled bundle contains no server-only modules. The rest of the
+source is split for testability:
+
+- `src/api-client.ts` — typed, browser-safe client for list/create/delete.
+- `src/notes-controller.ts` — UI-agnostic flow (validation, refresh, cache state).
+- `src/notes-form.ts` — form validation mirroring the API's limits.
+- `src/server.ts` — request handler: static files plus the `/api` proxy.
+- `src/index.ts` — the only `Bun.serve` entry point.
 
 ### `@repo/shared-utils`
 
