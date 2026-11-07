@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light dark" />
+    <meta
+      name="description"
+      content="A small Bun-powered notes app backed by the cached notes REST API."
+    />
+    <title>Notes</title>
+    <link rel="stylesheet" href="/styles.css" />
+    <script src="/app.js" type="module" defer></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+    <header class="site-header">
+      <div class="site-header__inner">
+        <div>
+          <h1 class="site-title">Notes</h1>
+          <p class="site-subtitle">A small Bun-powered notes app backed by the cached REST API.</p>
+        </div>
+        <span id="cache-badge" class="cache-badge" aria-live="polite" hidden></span>
+      </div>
+    </header>
+
+    <main id="main" class="layout">
+      <section class="panel" aria-labelledby="create-heading">
+        <h2 id="create-heading" class="panel__title">New note</h2>
+        <form id="note-form" class="note-form" novalidate>
+          <div class="field">
+            <label class="field__label" for="note-title">Title</label>
+            <input
+              id="note-title"
+              class="field__input"
+              name="title"
+              type="text"
+              maxlength="120"
+              autocomplete="off"
+              placeholder="Groceries"
+              aria-describedby="form-error"
+              required
+            />
+          </div>
+          <div class="field">
+            <label class="field__label" for="note-content">Content</label>
+            <textarea
+              id="note-content"
+              class="field__input field__input--textarea"
+              name="content"
+              rows="5"
+              maxlength="5000"
+              placeholder="Milk, eggs, and bread."
+              aria-describedby="note-counter form-error"
+            ></textarea>
+            <p id="note-counter" class="field__hint">0 / 5000</p>
+          </div>
+          <p id="form-error" class="form-error" role="alert" hidden></p>
+          <button id="note-submit" class="button button--primary" type="submit">Create note</button>
+        </form>
+      </section>
+
+      <section id="notes-panel" class="panel" aria-labelledby="notes-heading">
+        <div class="panel__header">
+          <h2 id="notes-heading" class="panel__title">Saved notes</h2>
+          <button id="notes-refresh" class="button button--ghost" type="button">Refresh</button>
+        </div>
+        <p id="notes-status" class="status" role="status" aria-live="polite" hidden></p>
+        <p id="notes-empty" class="empty" hidden>
+          No notes yet. Create one with the form to see it here.
+        </p>
+        <ul id="notes-list" class="notes"></ul>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <p>Requests go through the web server's same-origin <code>/api</code> proxy.</p>
+    </footer>
+  </body>
+</html>
