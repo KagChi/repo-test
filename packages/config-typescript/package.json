@@ -1,0 +1,16 @@
+{
+  "name": "@repo/config-typescript",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "files": [
+    "tsconfig.json",
+    "tsconfig.bun.json",
+    "tsconfig.react.json"
+  ],
+  "exports": {
+    "./tsconfig.json": "./tsconfig.json",
+    "./tsconfig.bun.json": "./tsconfig.bun.json",
+    "./tsconfig.react.json": "./tsconfig.react.json"
+  }
+}
