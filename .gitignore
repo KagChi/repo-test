@@ -14,6 +14,13 @@ out/
 bun.lockb
 !bun.lock
 
+# Local SQLite databases
+data/
+*.sqlite
+*.sqlite-journal
+*.sqlite-wal
+*.sqlite-shm
+
 # Environment
 .env
 .env.*

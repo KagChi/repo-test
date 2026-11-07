@@ -35,6 +35,7 @@ bun run lint         # run Biome lint rules only
 ```text
 .
 ├── apps/                  # Deployable applications
+│   ├── api/               # SQLite-backed notes REST API (Bun.serve + TtlLruCache)
 │   └── web/               # Placeholder Bun app that consumes @repo/shared-utils
 ├── packages/              # Shared modules and internal configuration
 │   ├── config-biome/      # Shared Biome lint/format rules
@@ -50,6 +51,42 @@ Workspace packages are namespaced under `@repo/*` and reference each other with 
 `workspace:*` protocol, so Bun links them locally without publishing anything.
 
 ## Packages
+
+### `@repo/api`
+
+A notes REST API built on `Bun.serve`, Bun's built-in `bun:sqlite`, and the
+`TtlLruCache` from `@repo/shared-utils`.
+
+```bash
+bun run --cwd apps/api start   # http://localhost:3001
+```
+
+| Variable       | Default             | Purpose                                      |
+| -------------- | ------------------- | -------------------------------------------- |
+| `PORT`         | `3001`              | HTTP port.                                   |
+| `DB_PATH`      | `data/notes.sqlite` | SQLite file; `:memory:` is supported.        |
+| `CACHE_TTL_MS` | `30000`             | TTL for cached note reads (0 disables hits). |
+
+| Method   | Path             | Response                                        |
+| -------- | ---------------- | ----------------------------------------------- |
+| `GET`    | `/health`        | `200 { "status": "ok" }`                        |
+| `GET`    | `/api/notes`     | `200 { "data": Note[] }`                        |
+| `GET`    | `/api/notes/:id` | `200 { "data": Note }` / `404 { "error": ... }` |
+| `POST`   | `/api/notes`     | `201 { "data": Note }` for `{ title, content }` |
+| `DELETE` | `/api/notes/:id` | `204` / `404 { "error": ... }`                  |
+
+A `Note` is `{ id, title, content, createdAt, updatedAt }` with ISO timestamps.
+`title` is required, trimmed, non-empty, and at most 120 characters; `content` is
+required and at most 5000 characters. Invalid payloads return `400`.
+
+Successful list and detail reads are cached per request handler and tagged with
+`X-Cache: HIT` or `X-Cache: MISS`; creates and deletes invalidate the affected
+entries. Permissive CORS headers (including `Access-Control-Expose-Headers: X-Cache`)
+and `OPTIONS` handling are included for the future web frontend.
+
+`createApp()` from `apps/api/src/app.ts` returns a `{ fetch }` handler without opening
+a listener, so tests can drive the API in-process; `apps/api/src/server.ts` is the
+only entry point that calls `Bun.serve`.
 
 ### `@repo/shared-utils`
 
