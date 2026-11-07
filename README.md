@@ -49,6 +49,28 @@ bun run lint         # run Biome lint rules only
 Workspace packages are namespaced under `@repo/*` and reference each other with the
 `workspace:*` protocol, so Bun links them locally without publishing anything.
 
+## Packages
+
+### `@repo/shared-utils`
+
+General-purpose TypeScript helpers (`greet`, `sum`, `padStart`, `capitalize`, `slugify`)
+plus a dependency-free TTL + LRU cache.
+
+```ts
+import { TtlLruCache } from "@repo/shared-utils";
+
+const cache = new TtlLruCache<string, number>({ capacity: 100, ttlMs: 60_000 });
+
+cache.set("answer", 42);
+cache.get("answer"); // 42, marked as most recently used
+cache.has("answer"); // true, without touching TTL or recency
+```
+
+`TtlLruCache` keeps at most `capacity` live entries, evicting the least recently used
+one when a new key is inserted at capacity. `ttlMs` defaults to `Infinity` (no expiry)
+and an injectable `now` clock keeps expiry behaviour deterministic in tests. Expired
+entries are never returned and are pruned by `size`.
+
 ## Tooling
 
 ### Biome

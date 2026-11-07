@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
-import { capitalize, greet, padStart, slugify, sum, VERSION } from "../src/index";
+import type { TtlLruCacheOptions } from "../src/cache";
+import { capitalize, greet, padStart, slugify, sum, TtlLruCache, VERSION } from "../src/index";
 
 describe("shared-utils", () => {
   test("greet uses the provided name", () => {
@@ -73,6 +74,15 @@ describe("shared-utils", () => {
   test("slugify is idempotent", () => {
     const slug = slugify("  Café déjà vu  ");
     expect(slugify(slug)).toBe(slug);
+  });
+
+  test("re-exports TtlLruCache and its options type", () => {
+    const options: TtlLruCacheOptions = { capacity: 1 };
+    const cache = new TtlLruCache<string, string>(options);
+
+    cache.set("key", "value");
+
+    expect(cache.get("key")).toBe("value");
   });
 
   test("exposes a version", () => {

@@ -1,3 +1,6 @@
+export type { TtlLruCacheOptions } from "./cache";
+export { TtlLruCache } from "./cache";
+
 /**
  * Formats a greeting message.
  *
