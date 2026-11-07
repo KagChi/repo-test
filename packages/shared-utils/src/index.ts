@@ -20,6 +20,28 @@ export function padStart(value: number, width: number, fill = "0"): string {
 }
 
 /**
+ * Constrains a number to an inclusive range.
+ *
+ * @param value - The number to clamp.
+ * @param minimum - The lower bound of the range (inclusive).
+ * @param maximum - The upper bound of the range (inclusive).
+ * @returns The value constrained to the range.
+ * @throws {RangeError} When any argument is not finite or `minimum` is greater
+ * than `maximum`.
+ */
+export function clamp(value: number, minimum: number, maximum: number): number {
+  if (!Number.isFinite(value) || !Number.isFinite(minimum) || !Number.isFinite(maximum)) {
+    throw new RangeError("clamp arguments must be finite numbers");
+  }
+
+  if (minimum > maximum) {
+    throw new RangeError("clamp minimum must not be greater than maximum");
+  }
+
+  return Math.min(Math.max(value, minimum), maximum);
+}
+
+/**
  * Capitalizes a string by uppercasing its first character and lowercasing the
  * rest.
  *
